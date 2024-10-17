@@ -15,6 +15,7 @@ module.exports = function(grunt) {
               'src/DataStream.js',                // bit/byte/string read operations
               'src/DataStream-write.js',          // bit/byte/string write operations
               'src/DataStream-map.js',            // bit/byte/string other operations
+              'src/FileStream.js',                // New JavaScript file method
               'src/buffer.js',                    // multi-buffer datastream
               'src/descriptor.js',                // MPEG-4 descriptor parsing
               'src/box.js',                       // core code for box definitions
@@ -91,6 +92,7 @@ module.exports = function(grunt) {
       ],
       options: {
         // options here to override JSHint defaults
+        esversion: 8,
         eqeqeq: false,
         asi: true,
         //verbose: true,
@@ -132,8 +134,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-karma-coveralls');
   grunt.loadNpmTasks('grunt-bump');
 
-  grunt.registerTask('all', [ 'concat:all', 'uglify:all']);
-  grunt.registerTask('simple', [ 'concat:simple', 'uglify:simple']);
+  //grunt.registerTask('all', [ 'concat:all', 'uglify:all']);
+  grunt.registerTask('all', [ 'concat:all' ]);
+  //grunt.registerTask('simple', [ 'concat:simple', 'uglify:simple']);
+  grunt.registerTask('simple', [ 'concat:simple' ]);
   grunt.registerTask('default', [ 'jshint', 'all', 'simple']);
   grunt.registerTask('test', ['default']);
 

@@ -110,14 +110,27 @@ Object.defineProperty(DataStream.prototype, 'byteLength',
 /**
   Set/get the backing ArrayBuffer of the DataStream object.
   The setter updates the DataView to point to the new buffer.
+
+  This is called transparently everytime this buffer var is accessed (read/write).
+
   @type {Object}
   */
 Object.defineProperty(DataStream.prototype, 'buffer',
   { get: function() {
+      //console.log("DataStream.buffer.get");
       this._trimAlloc();
       return this._buffer;
     },
     set: function(v) {
+      console.log("DataStream.buffer.set: " + v + ", prev == newBuf ? " + (this._prevBuffer == v));
+      console.log(v);
+      //console.trace();
+      //console.log("prevBuf="+this._prevBuffer + 
+      //  ", newBuf="+v + ", same=" + (this._prevBuffer == v));
+
+      // TODO If previous buffer != new buffer, then release previous buffer
+      //this._prevBuffer = this._buffer;
+
       this._buffer = v;
       this._dataView = new DataView(this._buffer, this._byteOffset);
       this._byteLength = this._buffer.byteLength;

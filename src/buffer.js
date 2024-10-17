@@ -243,6 +243,8 @@ MultiBufferStream.prototype.mergeNextBuffer = function() {
  * @return {Number}               the index of the buffer holding the seeked file position, -1 if not found.
  */
 MultiBufferStream.prototype.findPosition = function(fromStart, filePosition, markAsUsed) {
+	//console.log("MBS: findPosition: fromStart=" + fromStart + ", filePosition=" + filePosition);
+
 	var i;
 	var abuffer = null;
 	var index = -1;
@@ -294,6 +296,7 @@ MultiBufferStream.prototype.findPosition = function(fromStart, filePosition, mar
  * @return {Number}            The largest file position found in the buffers
  */
 MultiBufferStream.prototype.findEndContiguousBuf = function(inputindex) {
+	//console.log("MBS: findEndContiguousBuf");
 	var i;
 	var currentBuf;
 	var nextBuf;
@@ -366,6 +369,15 @@ MultiBufferStream.prototype.setAllUsedBytes = function() {
  * @return {Boolean}              true if the seek succeeded, false otherwise
  */
 MultiBufferStream.prototype.seek = function(filePosition, fromStart, markAsUsed) {
+
+	if(filePosition < this.getPosition())
+	{
+		console.log("MBS: seek: " + filePosition + ", backwards from: " + this.getPosition());
+		console.trace();
+	}
+	else
+		console.log("MBS: seek: ", filePosition);
+
 	var index;
 	index = this.findPosition(fromStart, filePosition, markAsUsed);
 	if (index !== -1) {
@@ -388,6 +400,30 @@ MultiBufferStream.prototype.getPosition = function() {
 	if (this.bufferIndex === -1 || this.buffers[this.bufferIndex] === null) {
 		throw "Error accessing position in the MultiBufferStream";
 	}
+
+	if(this.buffers[this.bufferIndex].fileStart === undefined)
+	{
+		console.log("fileStart is undefined at bufferIndex="+this.bufferIndex);
+		console.log("buffers.length="+this.buffers.length);
+	}
+
+	// Regression in latest version: when reading 1.6GB SOTV:
+	// Happens randomly, sometimes at different file positions.
+
+	// ISO: appendBuffer: ab.fileStart=4194304, buf=2097152, endPos=6291456
+	// analyse-mp4box.all.js:1963 MBS: seek:  4601740
+	// ISO: appendBuffer: buf=2097152, endPos=6291456
+	// analyse-mp4box.all.js:1963 MBS: seek:  4601740
+
+	// analyse-mp4box.all.js:1993 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'fileStart')
+    // at MultiBufferStream.getPosition (analyse-mp4box.all.js:1993:40)
+    // at MultiBufferStream.seek (analyse-mp4box.all.js:1965:25)
+    // at ISOFile.restoreParsePosition (analyse-mp4box.all.js:7348:21)
+    // at ISOFile.parse (analyse-mp4box.all.js:6658:13)
+    // at ISOFile.appendBuffer (analyse-mp4box.all.js:6763:7)
+    // at appendBuffers (analyse-mp4source.js:46:17)
+	//console.log("MBS: getPosition: ", (this.buffers[this.bufferIndex].fileStart+this.position));
+
 	return this.buffers[this.bufferIndex].fileStart+this.position;
 }
 

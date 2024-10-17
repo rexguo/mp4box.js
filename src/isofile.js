@@ -137,6 +137,9 @@ ISOFile.prototype.parse = function() {
 			}
 			ret = BoxParser.parseOneBox(this.stream, parseBoxHeadersOnly);
 			if (ret.code === BoxParser.ERR_NOT_ENOUGH_DATA) {
+
+				console.log("parse: ERR_NOT_ENOUGH_DATA");
+
 				if (this.processIncompleteBox) {
 					if (this.processIncompleteBox(ret)) {
 						continue;
@@ -209,6 +212,87 @@ ISOFile.prototype.checkBuffer = function (ab) {
 	return true;
 }
 
+// Same as appendBuffer() but without the buffers
+ISOFile.prototype.go = function(last) {
+	var nextFileStart;
+
+	/* Parse whatever is in the existing buffers */
+	this.parse();
+
+	/* Check if the moovStart callback needs to be called */
+	if (this.moovStartFound && !this.moovStartSent) {
+		this.moovStartSent = true;
+		if (this.onMoovStart) this.onMoovStart();
+	}
+
+	if (this.moov) {
+		/* A moov box has been entirely parsed */
+
+		/* if this is the first call after the moov is found we initialize the list of samples (may be empty in fragmented files) */
+		if (!this.sampleListBuilt) {
+			this.buildSampleLists();
+			this.sampleListBuilt = true;
+		}
+
+		/* We update the sample information if there are any new moof boxes */
+		this.updateSampleLists();
+
+		/* If the application needs to be informed that the 'moov' has been found,
+		   we create the information object and callback the application */
+		if (this.onReady && !this.readySent) {
+			this.readySent = true;
+			this.onReady(this.getInfo());
+		}
+
+		/* See if any sample extraction or segment creation needs to be done with the available samples */
+		this.processSamples(last, true); // skip loading of sample.data
+
+		/* Inform about the best range to fetch next */
+		if (this.nextSeekPosition) {
+			nextFileStart = this.nextSeekPosition;
+			this.nextSeekPosition = undefined;
+		} else {
+			nextFileStart = this.nextParsePosition;
+		}
+		if (this.stream.getEndFilePositionAfter) {
+			nextFileStart = this.stream.getEndFilePositionAfter(nextFileStart);
+		}
+	} else {
+		if (this.nextParsePosition) {
+			/* moov has not been parsed but the first buffer was received,
+			   the next fetch should probably be the next box start */
+			nextFileStart = this.nextParsePosition;
+		} else {
+			/* No valid buffer has been parsed yet, we cannot know what to parse next */
+			nextFileStart = 0;
+		}
+	}
+	if (this.sidx) {
+		if (this.onSidx && !this.sidxSent) {
+			this.onSidx(this.sidx);
+			this.sidxSent = true;
+		}
+	}
+	if (this.meta) {
+		if (this.flattenItemInfo && !this.itemListBuilt) {
+			this.flattenItemInfo();
+			this.itemListBuilt = true;
+		}
+		if (this.processItems) {
+			this.processItems(this.onItem);
+		}
+	}
+
+	if (this.stream.cleanBuffers) {
+		Log.info("ISOFile", "Done processing buffer");// (fileStart: "+ab.fileStart+") - next buffer to fetch should have a fileStart position of "+nextFileStart);
+		this.stream.logBufferLevel();
+		this.stream.cleanBuffers();
+		this.stream.logBufferLevel(true);
+		Log.info("ISOFile", "Sample data size in memory: "+this.getAllocatedSampleDataSize());
+	}
+	return nextFileStart;
+}
+
 /* Processes a new ArrayBuffer (with a fileStart property)
    Returns the next expected file position, or undefined if not ready to parse */
 ISOFile.prototype.appendBuffer = function(ab, last) {
@@ -216,6 +300,9 @@ ISOFile.prototype.appendBuffer = function(ab, last) {
 	if (!this.checkBuffer(ab)) {
 		return;
 	}
+
+	console.log("ISO: appendBuffer: ab.fileStart=" + ab.fileStart + 
+		", buf=" + ab.byteLength + ", endPos=" + this.stream.findEndContiguousBuf(0));
 
 	/* Parse whatever is in the existing buffers */
 	this.parse();
@@ -425,11 +512,13 @@ ISOFile.prototype.setNextSeekPositionFromSample = function (sample) {
 	}
 }
 
-ISOFile.prototype.processSamples = function(last) {
+ISOFile.prototype.processSamples = function(last, skipSampleData) {
 	var i;
 	var trak;
 	if (!this.sampleProcessingStarted) return;
 
+	//console.log("processSamples");
+	
 	/* For each track marked for fragmentation,
 	   check if the next sample is there (i.e. if the sample information is known (i.e. moof has arrived) and if it has been downloaded)
 	   and create a fragment with it */
@@ -474,14 +563,18 @@ ISOFile.prototype.processSamples = function(last) {
 		for (i = 0; i < this.extractedTracks.length; i++) {
 			var extractTrak = this.extractedTracks[i];
 			trak = extractTrak.trak;
+			console.log("trak.samples.length=", trak.samples.length);
 			while (trak.nextSample < trak.samples.length && this.sampleProcessingStarted) {
 				Log.debug("ISOFile", "Exporting on track #"+extractTrak.id +" sample #"+trak.nextSample);
-				var sample = this.getSample(trak, trak.nextSample);
+				var sample = //(typeof skipSampleData !== "undefined") ?
+				               trak.samples[trak.nextSample];// :        // skip sample.data
+							   //this.getSample(trak, trak.nextSample); // load sample.data
 				if (sample) {
 					trak.nextSample++;
 					extractTrak.samples.push(sample);
 				} else {
 					this.setNextSeekPositionFromSample(trak.samples[trak.nextSample]);
+					console.log("break1");
 					break;
 				}
 				if (trak.nextSample % extractTrak.nb_samples === 0 || trak.nextSample >= trak.samples.length) {
@@ -492,6 +585,7 @@ ISOFile.prototype.processSamples = function(last) {
 					extractTrak.samples = [];
 					if (extractTrak !== this.extractedTracks[i]) {
 						/* check if the extraction needs to be stopped */
+						console.log("break2");
 						break;
 					}
 				}
@@ -560,7 +654,7 @@ ISOFile.prototype.stop = function() {
 ISOFile.prototype.flush = function() {
 	Log.info("ISOFile", "Flushing remaining samples");
 	this.updateSampleLists();
-	this.processSamples(true);
+	this.processSamples(true); // do the onSamples() call-back
 	this.stream.cleanBuffers();
 	this.stream.logBufferLevel(true);
 }
