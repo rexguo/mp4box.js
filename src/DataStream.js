@@ -392,6 +392,12 @@ DataStream.prototype.readInt8 = function() {
   @return {number} The read number.
  */
 DataStream.prototype.readUint32 = function(e) {
+
+  if (this.position + 4 > this.buffer.byteLength)
+    console.log("WILL OVERFLOW: " + (this.position + 4) + " > " + this.buffer.byteLength);
+
+  // NOTE Cannot change meaning of this.position from local to global as DataView depends
+  // on it being local to the current buffer.
   var v = this._dataView.getUint32(this.position, e == null ? this.endianness : e);
   this.position += 4;
   return v;

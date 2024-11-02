@@ -132,6 +132,8 @@ ISOFile.prototype.restoreParsePosition = function() {
 ISOFile.prototype.saveParsePosition = function() {
 	/* remember the position of the box start in case we need to roll back (if the box is incomplete) */
 	this.lastBoxStartPosition = this.stream.getPosition();	
+
+	console.log("saveParsePosition: ", this.lastBoxStartPosition);
 }
 
 ISOFile.prototype.updateUsedBytes = function(box, ret) {

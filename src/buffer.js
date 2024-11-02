@@ -290,8 +290,10 @@ MultiBufferStream.prototype.findPosition = function(fromStart, filePosition, mar
 
 /**
  * Finds the largest file position contained in a buffer or in the next buffers if they are contiguous (no gap)
- * starting from the given buffer index or from the current buffer if the index is not given
- *
+ * starting from the given buffer index or from the current buffer if the index is not given.
+ * 
+ * Used by ISOFile.processIncompleteBox() when moov box is found.
+ * 
  * @param  {Number} inputindex Index of the buffer to start from
  * @return {Number}            The largest file position found in the buffers
  */
@@ -424,6 +426,7 @@ MultiBufferStream.prototype.getPosition = function() {
     // at appendBuffers (analyse-mp4source.js:46:17)
 	//console.log("MBS: getPosition: ", (this.buffers[this.bufferIndex].fileStart+this.position));
 
+	// This indicates that 'this.position' is relative to current buffer, not global offset
 	return this.buffers[this.bufferIndex].fileStart+this.position;
 }
 

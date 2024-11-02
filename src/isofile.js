@@ -115,7 +115,9 @@ ISOFile.prototype.parse = function() {
 	var found;
 	var ret;
 	var box;
-	var parseBoxHeadersOnly = false;
+	var parseBoxHeadersOnly = false; // If true, causes this error:
+	// Cannot read properties of undefined (reading 'type')
+	// box_type = (box.type !== "uuid" ? box.type : box.uuid);
 
 	if (this.restoreParsePosition)	{
 		if (!this.restoreParsePosition()) {
@@ -139,6 +141,7 @@ ISOFile.prototype.parse = function() {
 			if (ret.code === BoxParser.ERR_NOT_ENOUGH_DATA) {
 
 				console.log("parse: ERR_NOT_ENOUGH_DATA");
+				//console.trace();
 
 				if (this.processIncompleteBox) {
 					if (this.processIncompleteBox(ret)) {
@@ -150,6 +153,9 @@ ISOFile.prototype.parse = function() {
 					return;
 				}
 			} else {
+
+				console.log("parse: enough data");
+
 				var box_type;
 				/* the box is entirely parsed */
 				box = ret.box;
@@ -159,12 +165,15 @@ ISOFile.prototype.parse = function() {
 				/* but also store box in a property for more direct access */
 				switch (box_type) {
 					case "mdat":
+						console.log("parse: mdat at ", this.stream.getPosition());
 						this.mdats.push(box);
 						break;
 					case "moof":
+						console.log("parse: moof at ", this.stream.getPosition());
 						this.moofs.push(box);
 						break;
 					case "moov":
+						console.log("parse: moov at ", this.stream.getPosition());
 						this.moovStartFound = true;
 						if (this.mdats.length === 0) {
 							this.isProgressive = true;
@@ -213,6 +222,11 @@ ISOFile.prototype.checkBuffer = function (ab) {
 }
 
 // Same as appendBuffer() but without the buffers
+// Host
+// .go
+//   .parse
+//     BoxParser.parseOneBox
+//     processIncompleteBox
 ISOFile.prototype.go = function(last) {
 	var nextFileStart;
 
