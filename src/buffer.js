@@ -375,7 +375,7 @@ MultiBufferStream.prototype.seek = function(filePosition, fromStart, markAsUsed)
 	if(filePosition < this.getPosition())
 	{
 		console.log("MBS: seek: " + filePosition + ", backwards from: " + this.getPosition());
-		console.trace();
+		//console.trace();
 	}
 	else
 		console.log("MBS: seek: ", filePosition);

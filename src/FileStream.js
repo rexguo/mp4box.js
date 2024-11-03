@@ -49,7 +49,20 @@ FileStream.prototype.seek = function(filePosition, fromStart, markAsUsed)
 
     // If seek is outside of current buffer, then slice a new buffer
 
-    if (filePosition >= this.getEndPosition())
+    if(filePosition  == this.file.size)
+    {
+        console.log("Seeking to EOF: ", filePosition);
+        console.trace();
+        return false;
+    }
+
+    if(filePosition < this.getPosition())
+    {
+        console.log("FS: seek: " + filePosition + ", backwards from: " + this.getPosition());
+        //console.trace();
+    }
+
+    if(filePosition >= this.getEndPosition())
     {
         console.log("SEEK OUTSIDE BUFFER: " + filePosition + " > " + this.getEndPosition());
         return false;

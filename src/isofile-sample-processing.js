@@ -36,7 +36,16 @@ ISOFile.prototype.resetTables = function () {
 	}
 }
 
+// go/appendBuffer
+//   buildSampleLists
+//     buildTrakSampleLists
 ISOFile.initSampleGroups = function(trak, traf, sbgps, trak_sgpds, traf_sgpds) {
+	if(this.stream)
+		console.log("initSampleGroups: filePos=", this.stream.getPosition());
+	else
+		console.log("initSampleGroups");
+	//console.trace();
+
 	var l;
 	var k;
 	var sample_groups_info;
@@ -216,6 +225,9 @@ ISOFile.prototype.buildTrakSampleLists = function(trak) {
 	if (typeof stsz === "undefined") {
 		return;
 	}
+
+	console.log("buildTrakSampleLists: stsz.sample_sizes=", stsz.sample_sizes.length);
+	console.log("filePosition=", this.stream.getPosition());
 
 	/* we build the samples one by one and compute their properties */
 	for (j = 0; j < stsz.sample_sizes.length; j++) {
@@ -405,6 +417,7 @@ ISOFile.prototype.updateSampleLists = function() {
 			            sample.number = trak.samples.length;
 						traf.first_sample_index = trak.samples.length;
 						trak.samples.push(sample);
+						//console.log("trak.samples.push: ", trak.samples.length);
 						sample.track_id = trak.tkhd.track_id;
 						sample.timescale = trak.mdia.mdhd.timescale;
 						sample.description_index = default_sample_description_index-1;

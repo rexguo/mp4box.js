@@ -154,7 +154,7 @@ ISOFile.prototype.parse = function() {
 				}
 			} else {
 
-				console.log("parse: enough data");
+				//console.log("parse: enough data");
 
 				var box_type;
 				/* the box is entirely parsed */

@@ -122,8 +122,8 @@ Object.defineProperty(DataStream.prototype, 'buffer',
       return this._buffer;
     },
     set: function(v) {
-      console.log("DataStream.buffer.set: " + v + ", prev == newBuf ? " + (this._prevBuffer == v));
-      console.log(v);
+      console.log("DataStream.buffer.set: ", v);// + ", prev == newBuf ? " + (this._prevBuffer == v));
+      //console.log(v);
       //console.trace();
       //console.log("prevBuf="+this._prevBuffer + 
       //  ", newBuf="+v + ", same=" + (this._prevBuffer == v));
