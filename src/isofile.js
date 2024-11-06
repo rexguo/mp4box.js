@@ -666,7 +666,10 @@ ISOFile.prototype.stop = function() {
 
 /* Called by the application to flush the remaining samples (e.g. once the download is finished or when no more samples will be added) */
 ISOFile.prototype.flush = function() {
-	Log.info("ISOFile", "Flushing remaining samples");
+	console.log("ISOFile", "Flushing remaining samples");
+	console.log("flush: filePos=", this.stream.getPosition(), ", fileSize=", this.size);
+	//console.log("flush:", this.stream.isoFile);
+
 	this.updateSampleLists();
 	this.processSamples(true); // do the onSamples() call-back
 	this.stream.cleanBuffers();

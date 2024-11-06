@@ -378,7 +378,15 @@ MultiBufferStream.prototype.seek = function(filePosition, fromStart, markAsUsed)
 		//console.trace();
 	}
 	else
-		console.log("MBS: seek: ", filePosition);
+		console.log("MBS: seek: ", filePosition, ", savedPos=", this.isoFile.lastBoxStartPosition);
+
+		
+	if(this.getPosition() == this.isoFile.size)
+	{
+		console.log("MBS: seek to EOF: ", filePosition);
+	}
+		
+	// go -> parse -> processIncompleteBox
 
 	var index;
 	index = this.findPosition(fromStart, filePosition, markAsUsed);

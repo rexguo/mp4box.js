@@ -41,9 +41,9 @@ ISOFile.prototype.resetTables = function () {
 //     buildTrakSampleLists
 ISOFile.initSampleGroups = function(trak, traf, sbgps, trak_sgpds, traf_sgpds) {
 	if(this.stream)
-		console.log("initSampleGroups: filePos=", this.stream.getPosition());
+		console.log("initSampleGroups: filePos=", this.stream.getPosition(), ", trak=", trak);
 	else
-		console.log("initSampleGroups");
+		console.log("initSampleGroups: trak=", trak);
 	//console.trace();
 
 	var l;
